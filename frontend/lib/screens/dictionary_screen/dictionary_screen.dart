@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:infotune/widgets/app_bar.dart';
 
 class DictionaryScreen extends StatefulWidget {
   const DictionaryScreen({super.key});
@@ -48,19 +49,7 @@ class DictionaryScreenState extends State<DictionaryScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Dictionary',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blue.shade800,
-        elevation: 0,
-      ),
+      appBar: const AppBarWidget(title: "Dictionary"),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(

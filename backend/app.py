@@ -12,29 +12,24 @@ NEWS_API_URL = "https://newsapi.org/v2/top-headlines"
 # Dictionary API
 DICTIONARY_API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en"
 
-# Spotify API (for music)
-SPOTIFY_CLIENT_ID = "your_spotify_client_id"
-SPOTIFY_CLIENT_SECRET = "your_spotify_client_secret"
-SPOTIFY_TOKEN_URL = "https://accounts.spotify.com/api/token"
-SPOTIFY_SEARCH_URL = "https://api.spotify.com/v1/search"
-
-# Get Spotify access token
-def get_spotify_token():
-    auth_response = requests.post(
-        SPOTIFY_TOKEN_URL,
-        data={"grant_type": "client_credentials"},
-        auth=(SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET),
-    )
-    return auth_response.json().get("access_token")
+# Deezer API (Free & No Auth Required)
+DEEZER_SEARCH_URL = "https://api.deezer.com/search"
 
 # News Endpoint
 @app.route("/news", methods=["GET"])
 def get_news():
+    category = request.args.get("category", "general")
+    query = request.args.get("q")
+
     params = {
         "apiKey": NEWS_API_KEY,
-        "country": request.args.get("country", "us"),
-        "category": request.args.get("category", "general"),
+        "country": "us",
+        "category": category,
     }
+
+    if query:
+        params["q"] = query
+
     response = requests.get(NEWS_API_URL, params=params)
     return jsonify(response.json())
 
@@ -48,18 +43,32 @@ def get_definition():
     response = requests.get(f"{DICTIONARY_API_URL}/{word}")
     return jsonify(response.json())
 
-# Music Endpoint
+# Music Endpoint using Deezer API
 @app.route("/music", methods=["GET"])
 def search_music():
     query = request.args.get("query")
     if not query:
         return jsonify({"error": "Query parameter is required"}), 400
 
-    token = get_spotify_token()
-    headers = {"Authorization": f"Bearer {token}"}
-    params = {"q": query, "type": "track", "limit": 10}
-    response = requests.get(SPOTIFY_SEARCH_URL, headers=headers, params=params)
-    return jsonify(response.json())
+    response = requests.get(f"{DEEZER_SEARCH_URL}?q={query}")
+    if response.status_code != 200:
+        return jsonify({"error": "Failed to fetch music data"}), 500
+
+    data = response.json()
+    
+    # Extracting relevant data
+    music_results = []
+    for track in data.get("data", []):
+        music_results.append({
+            "title": track["title"],
+            "artist": track["artist"]["name"],
+            "album": track["album"]["title"],
+            "preview_url": track["preview"],  # 30-second preview link
+            "deezer_url": track["link"],  # Full track on Deezer
+            "cover_image": track["album"]["cover_medium"],
+        })
+
+    return jsonify(music_results)
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=True)
