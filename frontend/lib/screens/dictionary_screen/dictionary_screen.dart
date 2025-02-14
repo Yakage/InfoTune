@@ -1,49 +1,25 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:infotune/blocs/dictionary_bloc.dart';
+import 'package:infotune/blocs/dictionary_event.dart';
+import 'package:infotune/blocs/dictionary_state.dart';
 import 'package:infotune/widgets/app_bar.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class DictionaryScreen extends StatefulWidget {
-  const DictionaryScreen({super.key});
+  final DictionaryBloc dictionaryBloc;
+  const DictionaryScreen({super.key, required this.dictionaryBloc});
 
   @override
   DictionaryScreenState createState() => DictionaryScreenState();
 }
 
 class DictionaryScreenState extends State<DictionaryScreen> {
-  String definition = '';
   final TextEditingController _controller = TextEditingController();
-  bool _isLoading = false;
 
-  Future<void> fetchDefinition(String word) async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      final response = await http.get(
-        Uri.parse('http://192.168.1.133:5000/dictionary?word=$word'),
-      );
-
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        setState(() {
-          definition = data[0]['meanings'][0]['definitions'][0]['definition'];
-        });
-      } else {
-        setState(() {
-          definition = "No definition found for '$word'.";
-        });
-      }
-    } catch (e) {
-      setState(() {
-        definition = "Error fetching definition. Please try again.";
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    widget.dictionaryBloc.add(DictionaryLoadingEvent());
   }
 
   @override
@@ -91,7 +67,9 @@ class DictionaryScreenState extends State<DictionaryScreen> {
                         icon: const Icon(Icons.search, color: Colors.white),
                         onPressed: () {
                           if (_controller.text.isNotEmpty) {
-                            fetchDefinition(_controller.text);
+                            widget.dictionaryBloc.add(
+                              FetchDefiniionEvent(word: _controller.text),
+                            );
                           }
                         },
                       ),
@@ -101,56 +79,72 @@ class DictionaryScreenState extends State<DictionaryScreen> {
               ),
               const SizedBox(height: 20),
 
-              // Definition Card
+              // BlocBuilder for Definition Card
               Expanded(
-                child: _isLoading
-                    ? const Center(
+                child: BlocBuilder<DictionaryBloc, DictionaryState>(
+                  builder: (context, state) {
+                    if (state is DictionaryLoadingState) {
+                      return const Center(
                         child: CircularProgressIndicator(
                           color: Colors.white,
                         ),
-                      )
-                    : definition.isEmpty
-                        ? const Center(
-                            child: Text(
-                              "Search for a word to see its definition.",
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontStyle: FontStyle.italic,
-                              ),
-                            ),
-                          )
-                        : SingleChildScrollView(
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16.0),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _controller.text,
-                                    style: const TextStyle(
-                                      fontSize: 24,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    definition,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
+                      );
+                    } else if (state is DictionaryLoadedSuccessState) {
+                      return SingleChildScrollView(
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16.0),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
                           ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _controller.text,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                state.definition,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } else if (state is DictionaryErrorState) {
+                      return Center(
+                        child: Text(
+                          state.message,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      );
+                    }
+                    return const Center(
+                      child: Text(
+                        "Search for a word to see its definition.",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
             ],
           ),

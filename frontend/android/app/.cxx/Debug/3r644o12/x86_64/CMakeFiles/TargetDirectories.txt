@@ -1,0 +1,2 @@
+D:/VS Code for Flutter/Large Project/InfoTune/frontend/android/app/.cxx/Debug/3r644o12/x86_64/CMakeFiles/edit_cache.dir
+D:/VS Code for Flutter/Large Project/InfoTune/frontend/android/app/.cxx/Debug/3r644o12/x86_64/CMakeFiles/rebuild_cache.dir

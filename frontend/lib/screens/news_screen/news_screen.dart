@@ -32,7 +32,7 @@ class NewsScreenState extends State<NewsScreen> {
 
   Future<void> fetchNews({String? searchQuery}) async {
     try {
-      String url = 'http://192.168.1.133:5000/news';
+      String url = 'https://infotune.onrender.com/news';
       if (searchQuery != null) {
         url += '?q=$searchQuery';
       }
@@ -57,7 +57,7 @@ class NewsScreenState extends State<NewsScreen> {
   Future<void> fetchCategoryNews() async {
     for (String category in categoryArticles.keys) {
       try {
-        String url = 'http://192.168.1.133:5000/news?category=$category';
+        String url = 'https://infotune.onrender.com/news?category=$category';
 
         final response = await http.get(Uri.parse(url));
 

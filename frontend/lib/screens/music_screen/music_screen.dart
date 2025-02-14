@@ -22,7 +22,7 @@ class MusicScreenState extends State<MusicScreen> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://192.168.1.133:5000/music?query=$query'),
+        Uri.parse('https://infotune.onrender.com/music?query=$query'),
       );
 
       if (response.statusCode == 200) {
@@ -97,24 +97,32 @@ class MusicScreenState extends State<MusicScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Loading Indicator
-              if (_isLoading)
-                const Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
+
               // Music List
               Expanded(
                 child: tracks.isEmpty
                     ? Center(
-                        child: Text(
-                          _isLoading
-                              ? "Searching for music..."
-                              : "No tracks found. Try searching!",
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                            fontStyle: FontStyle.italic,
-                          ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              _isLoading
+                                  ? "Searching for music..."
+                                  : "No tracks found. Try searching!",
+                              style: const TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            if (_isLoading)
+                              const Center(
+                                child: CircularProgressIndicator(
+                                    color: Colors.white),
+                              ),
+                          ],
                         ),
                       )
                     : ListView.builder(
