@@ -113,7 +113,7 @@ def search_music():
                     "title": track.get("title"),
                     "artist": track.get("artist", {}).get("name", "Unknown"),
                     "cover_image": track.get("album", {}).get("cover_medium"),
-                    "deezer_url": track.get("link"),
+                    "deezer_url": track.get("preview"),
                 }
                 for track in data
             ]
