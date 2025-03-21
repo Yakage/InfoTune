@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:infotune/screens/news_screen/search_result_page.dart';
 import 'package:infotune/widgets/app_bar.dart';
 import 'package:infotune/widgets/news_widgets/news_catalogs_widget.dart';
 import 'package:infotune/widgets/news_widgets/news_trending_widget.dart';
@@ -30,13 +31,9 @@ class NewsScreenState extends State<NewsScreen> {
     fetchCategoryNews(); // Fetch all category news
   }
 
-  Future<void> fetchNews({String? searchQuery}) async {
+  Future<void> fetchNews() async {
     try {
       String url = 'https://infotune.onrender.com/news';
-      if (searchQuery != null) {
-        url += '?q=$searchQuery';
-      }
-
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -75,6 +72,122 @@ class NewsScreenState extends State<NewsScreen> {
         print("Error fetching $category news: $e");
       }
     }
+  }
+
+  void showNewsDialog(BuildContext context, Map<String, dynamic> article) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 10,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.blue.shade800,
+                  Colors.blue.shade600,
+                  Colors.blue.shade400,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title
+                  Text(
+                    article['title'] ?? "No Title",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Image
+                  if (article['urlToImage'] != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Image.network(
+                        article['urlToImage'],
+                        width: double.infinity,
+                        height: 200,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+
+                  // Description
+                  Text(
+                    article['description'] ?? "No Description Available",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Published Date
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.calendar_today,
+                        size: 16,
+                        color: Colors.white70,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        "Published at: ${article['publishedAt'] ?? "Unknown Date"}",
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Close Button
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 10,
+                        ),
+                      ),
+                      child: const Text(
+                        "Close",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override
@@ -118,6 +231,17 @@ class NewsScreenState extends State<NewsScreen> {
                               hintStyle: TextStyle(color: Colors.white54),
                               border: InputBorder.none,
                             ),
+                            onSubmitted: (query) {
+                              if (query.isNotEmpty) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        SearchResultsScreen(query: query),
+                                  ),
+                                );
+                              }
+                            },
                           ),
                         ),
                         IconButton(
@@ -125,7 +249,13 @@ class NewsScreenState extends State<NewsScreen> {
                           onPressed: () {
                             String query = _controller.text.trim();
                             if (query.isNotEmpty) {
-                              fetchNews(searchQuery: query);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      SearchResultsScreen(query: query),
+                                ),
+                              );
                             }
                           },
                         ),
@@ -151,11 +281,15 @@ class NewsScreenState extends State<NewsScreen> {
                     itemCount: trendingArticles.length,
                     itemBuilder: (context, index) {
                       final article = trendingArticles[index];
-                      return TrendingNewsCard(
-                        title: article['title'] ?? "No Title",
-                        description: article['description'] ?? "No Description",
-                        image: article['urlToImage'] ??
-                            "https://via.placeholder.com/200",
+                      return GestureDetector(
+                        onTap: () => showNewsDialog(context, article),
+                        child: TrendingNewsCard(
+                          title: article['title'] ?? "No Title",
+                          description:
+                              article['description'] ?? "No Description",
+                          image: article['urlToImage'] ??
+                              "https://via.placeholder.com/200",
+                        ),
                       );
                     },
                   ),
@@ -193,12 +327,16 @@ class NewsScreenState extends State<NewsScreen> {
             itemCount: categoryArticles[category]?.length ?? 0,
             itemBuilder: (context, index) {
               final article = categoryArticles[category]?[index];
-              return CategoryNewsCard(
-                category: category,
-                title: article?['title'] ?? "No Title",
-                description: article?['description'] ?? "No Description",
-                image: article?['urlToImage'] ?? "https://via.placeholder.com/200?text=No+Image+Available",
-                publishedAt: article?['publishedAt'] ?? "Unknown Date",
+              return GestureDetector(
+                onTap: () => showNewsDialog(context, article!),
+                child: CategoryNewsCard(
+                  category: category,
+                  title: article?['title'] ?? "No Title",
+                  description: article?['description'] ?? "No Description",
+                  image: article?['urlToImage'] ??
+                      "https://via.placeholder.com/200",
+                  publishedAt: article?['publishedAt'] ?? "Unknown Date",
+                ),
               );
             },
           ),

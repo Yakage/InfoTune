@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:infotune/widgets/app_bar.dart';
@@ -14,6 +15,7 @@ class MusicScreenState extends State<MusicScreen> {
   List<dynamic> tracks = [];
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = false;
+  final AudioPlayer audioPlayer = AudioPlayer(); 
 
   Future<void> searchMusic(String query) async {
     setState(() {
@@ -31,7 +33,7 @@ class MusicScreenState extends State<MusicScreen> {
           tracks = data;
         });
       } else {
-        throw Exception('Failed to load music');
+        print("Failed to fetch music: ${response.statusCode}");
       }
     } catch (e) {
       print("Error fetching music: $e");
@@ -164,9 +166,10 @@ class MusicScreenState extends State<MusicScreen> {
                                 Icons.play_arrow,
                                 color: Colors.white,
                               ),
-                              onTap: () {
-                                // Open Deezer track
-                                // launchURL(track['deezer_url']);
+                              onTap: () async {
+                                final url = track['deezer_url'];
+                                await audioPlayer.play(UrlSource(url));
+                                
                               },
                             ),
                           );
